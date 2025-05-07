@@ -33,6 +33,7 @@ export class WebsocketManager {
                     const type = parsed.type;
                     switch (type) {
                         case "register":
+                            console.log(`registering user ${parsed.user}`);
                             this.clients.set(parsed.user, ws);
                             break;
                         case "offer":
