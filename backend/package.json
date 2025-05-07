@@ -4,7 +4,9 @@
     "author": "tholkappiar",
     "license": "MIT",
     "scripts": {
-        "start": "nodemon ./src/index.ts"
+        "dev": "yarn nodemon ./src/index.ts",
+        "build": "yarn tsc -b",
+        "start": "node ./dist/index.js"
     },
     "dependencies": {
         "express": "^5.1.0",
