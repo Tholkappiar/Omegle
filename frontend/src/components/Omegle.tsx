@@ -1,4 +1,5 @@
-import { useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { authClient } from "../../lib/auth-client";
 
 type RequestData = {
     user: string;
@@ -41,16 +42,14 @@ const Omegle = () => {
     }
 
     async function register() {
-        const websocketConnection = new WebSocket("ws://localhost:3000");
-        ws.current = websocketConnection;
-        websocketConnection.onmessage = handleMessages;
-        websocketConnection.onopen = () => {
-            const data: RequestData = {
-                user: userData.user,
-                type: "register",
-            };
-            websocketConnection.send(JSON.stringify(data));
-        };
+        try {
+            const websocket_url = import.meta.env.VITE_WEBSOCKET;
+            const websocketConnection = new WebSocket(websocket_url);
+            ws.current = websocketConnection;
+            websocketConnection.onmessage = handleMessages;
+        } catch (err) {
+            console.error("err : ", err);
+        }
     }
 
     async function initWebRTC(): Promise<RTCPeerConnection> {
@@ -176,6 +175,29 @@ const Omegle = () => {
         }
     }
 
+    useEffect(() => {
+        const fetchSession = async () => {
+            try {
+                const sessionRes = await authClient.getSession();
+                console.log(sessionRes);
+                const sessionId = sessionRes.data?.user.id || null;
+                if (!sessionId) {
+                    console.error("session id not found");
+                    return;
+                }
+                setUserData((prev) => ({
+                    ...prev,
+                    user: sessionId,
+                }));
+                userDataRef.current.user = sessionId;
+            } catch (error) {
+                console.error("Error fetching session:", error);
+            }
+        };
+
+        fetchSession();
+    }, []);
+
     return (
         <div className="min-h-screen flex flex-col justify-center items-center">
             <div className="flex gap-4">
@@ -203,7 +225,8 @@ const Omegle = () => {
             <div className="flex flex-col gap-4 my-4 w-1/2">
                 <input
                     className="p-2 border border-black rounded-xl"
-                    placeholder="Your Name"
+                    placeholder="Getting your Name ..."
+                    disabled
                     name="user"
                     value={userData.user}
                     onChange={dataOnChange}
