@@ -2,7 +2,7 @@ import { useRef, useState, type ChangeEvent } from "react";
 
 type RequestData = {
     user: string;
-    client: string;
+    client?: string;
     type: string;
     sdp?: RTCSessionDescriptionInit | null;
     candidate?: RTCIceCandidateInit | null;
@@ -41,42 +41,41 @@ const Omegle = () => {
     }
 
     async function register() {
-        const websocketConnection = new WebSocket(
-            "wss://omegle-ue63.onrender.com"
-        );
+        const websocketConnection = new WebSocket("ws://localhost:3000");
         ws.current = websocketConnection;
+        websocketConnection.onmessage = handleMessages;
         websocketConnection.onopen = () => {
             const data: RequestData = {
                 user: userData.user,
-                client: userData.client,
                 type: "register",
             };
             websocketConnection.send(JSON.stringify(data));
         };
-        await initWebRTC();
-        websocketConnection.onmessage = handleMessages;
     }
 
-    async function initWebRTC() {
+    async function initWebRTC(): Promise<RTCPeerConnection> {
         const pc = new RTCPeerConnection({
-            iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+            iceServers: [
+                { urls: "stun:stun.l.google.com:19302" },
+                { urls: "stun:stun1.l.google.com:5349" },
+            ],
         });
         pcRef.current = pc;
 
         pc.onicecandidate = (event) => {
-            const c = event.candidate;
-            ws.current?.send(
-                JSON.stringify({
+            if (event.candidate) {
+                const data = {
                     user: userDataRef.current.user,
                     client: userDataRef.current.client,
                     type: "candidate",
-                    candidate: c,
-                })
-            );
+                    candidate: event.candidate,
+                };
+                ws.current?.send(JSON.stringify(data));
+            }
         };
 
         pc.ontrack = (event) => {
-            if (event.streams && remoteStream.current) {
+            if (event.streams.length > 0 && remoteStream.current) {
                 remoteStream.current.srcObject = event.streams[0];
             }
         };
@@ -84,22 +83,33 @@ const Omegle = () => {
             audio: true,
             video: true,
         });
-        if (localStream.current) localStream.current.srcObject = stream;
+
+        if (localStream.current) {
+            localStream.current.srcObject = stream;
+        }
 
         stream.getTracks().forEach((track) => {
             pc.addTrack(track, stream);
         });
+
+        return pc;
     }
 
     async function handleMessages(event: MessageEvent) {
         const parsed = JSON.parse(event.data);
+        const pc = pcRef.current;
+
         switch (parsed.type) {
             case "offer": {
-                await pcRef.current?.setRemoteDescription(
+                if (!pc) return;
+
+                await pc.setRemoteDescription(
                     new RTCSessionDescription(parsed.sdp)
                 );
-                const answer = await pcRef.current?.createAnswer();
-                await pcRef.current?.setLocalDescription(answer);
+
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+
                 const data: RequestData = {
                     user: userDataRef.current.user,
                     client: parsed.user,
@@ -109,27 +119,61 @@ const Omegle = () => {
                 ws.current?.send(JSON.stringify(data));
                 break;
             }
-            case "answer":
+            case "answer": {
+                if (!pc) return;
+
+                if (pc.signalingState !== "have-local-offer") {
+                    console.warn(
+                        "Cannot set remote answer: current signalingState is",
+                        pc.signalingState
+                    );
+                    return;
+                }
                 await pcRef.current?.setRemoteDescription(
                     new RTCSessionDescription(parsed.sdp)
                 );
                 break;
-            case "candidate":
-                pcRef.current?.addIceCandidate(parsed.candidate);
-                break;
-        }
-    }
+            }
 
-    async function startCall() {
-        const offer = await pcRef.current?.createOffer();
-        pcRef.current?.setLocalDescription(offer);
-        const data: RequestData = {
-            user: userData.user,
-            client: userData.client,
-            type: "offer",
-            sdp: offer,
-        };
-        ws.current?.send(JSON.stringify(data));
+            case "candidate": {
+                if (!pc) return;
+
+                if (parsed.candidate) {
+                    try {
+                        await pc.addIceCandidate(parsed.candidate);
+                    } catch (err) {
+                        console.warn("Failed to add candidate:", err);
+                    }
+                }
+                break;
+            }
+
+            case "match": {
+                userDataRef.current.client = parsed.partner;
+                const isOfferer = userDataRef.current.user < parsed.partner;
+                const newPc = await initWebRTC();
+
+                if (isOfferer) {
+                    const offer = await newPc.createOffer();
+                    await newPc.setLocalDescription(offer);
+
+                    const data: RequestData = {
+                        user: userDataRef.current.user,
+                        client: parsed.partner,
+                        type: "offer",
+                        sdp: offer,
+                    };
+                    ws.current?.send(JSON.stringify(data));
+                } else {
+                    console.log(
+                        "Waiting for offer from partner:",
+                        parsed.partner
+                    );
+                }
+
+                break;
+            }
+        }
     }
 
     return (
@@ -146,7 +190,7 @@ const Omegle = () => {
                     ></video>
                 </div>
                 <div>
-                    <p className="font-bold m my-4">Client Video :</p>
+                    <p className="font-bold my-4">Client Video :</p>
                     <video
                         autoPlay
                         playsInline
@@ -165,27 +209,13 @@ const Omegle = () => {
                     onChange={dataOnChange}
                     type="text"
                 />
-                <input
-                    className="p-2 border border-black rounded-xl"
-                    placeholder="Client Name"
-                    name="client"
-                    value={userData.client}
-                    onChange={dataOnChange}
-                    type="text"
-                />
             </div>
             <div className="flex flex-col gap-2">
                 <button
                     onClick={register}
-                    className="p-2 rounded-xl bg-blue-500 text-white font-semibold"
-                >
-                    Register
-                </button>
-                <button
-                    onClick={startCall}
                     className="p-2 rounded-xl bg-green-500 text-white font-semibold"
                 >
-                    Start Call
+                    Register and Start Call
                 </button>
             </div>
         </div>
