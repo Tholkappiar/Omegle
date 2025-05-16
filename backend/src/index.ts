@@ -5,9 +5,18 @@ import { registerRoutes } from "./websocket/websocket";
 import { CONFIG } from "./utils/config";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./utils/auth";
+import cors from "cors";
 
 const app = express();
 const httpServer = createServer(app);
+
+app.use(
+    cors({
+        origin: CONFIG.FRONTEND_URL,
+        methods: ["GET", "POST", "PUT", "DELETE"],
+        credentials: true,
+    })
+);
 
 app.all("/api/auth/*splat", toNodeHandler(auth));
 app.use(express.json());

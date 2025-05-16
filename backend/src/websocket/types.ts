@@ -7,8 +7,15 @@ export type WebSocketClient = {
 
 export type WebSocketMessage = {
     user: string;
-    client?: string;
-    type: "offer" | "answer" | "candidate" | "next";
+    partner?: string;
+    type:
+        | "offer"
+        | "answer"
+        | "candidate"
+        | "next"
+        | "media-state-change"
+        | "leave";
     sdp?: RTCSessionDescriptionInit;
     candidate?: RTCIceCandidateInit;
+    mediaState: Map<string, { microphone: boolean; video: boolean }>;
 };
