@@ -1,6 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import AuthForm from "./components/AuthForm";
-import Omegle from "./components/Omegle";
+import { Omegle } from "./components/Omegle";
 
 function App() {
     return (
