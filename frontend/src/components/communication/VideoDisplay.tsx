@@ -30,21 +30,27 @@ export const VideoDisplay = ({
                     autoPlay
                     playsInline
                     ref={remoteStreamRef}
-                    className="w-full h-full object-cover border border-pink-300 rounded-xl"
+                    onContextMenu={(e) => e.preventDefault()}
+                    controls={false}
+                    className="w-full h-full object-cover border border-purple-300 rounded-xl scale-x-[-1]"
                 ></video>
 
                 {/* Local Video (Picture-in-Picture) */}
                 <div className="absolute bottom-2 right-2 w-1/4 z-10">
-                    <p className="absolute bottom-2 left-2 bg-gray-500 text-white text-xs font-light rounded-2xl py-1 px-2">
-                        You
-                    </p>
-                    <video
-                        autoPlay
-                        playsInline
-                        muted
-                        ref={localStreamRef}
-                        className="w-full h-52 object-cover border border-pink-300 rounded-xl"
-                    ></video>
+                    <div className="relative">
+                        <video
+                            autoPlay
+                            playsInline
+                            muted
+                            ref={localStreamRef}
+                            onContextMenu={(e) => e.preventDefault()}
+                            controls={false}
+                            className="w-full h-52 object-cover border border-purple-300 rounded-xl scale-x-[-1]"
+                        ></video>
+                        <p className="absolute bottom-2 left-2 bg-gray-500 text-white text-xs font-light rounded-2xl py-1 px-2">
+                            You
+                        </p>
+                    </div>
                 </div>
             </div>
 

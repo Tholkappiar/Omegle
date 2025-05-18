@@ -6,7 +6,6 @@ export const useUserData = () => {
     const [userData, setUserData] = useState<RequestData>({
         user: "",
         partner: "",
-        type: "",
         sdp: null,
         candidate: null,
     });
@@ -14,7 +13,6 @@ export const useUserData = () => {
     const userDataRef = useRef<RequestData>({
         user: "",
         partner: "",
-        type: "",
         sdp: null,
         candidate: null,
     });
@@ -31,16 +29,16 @@ export const useUserData = () => {
             try {
                 const sessionRes = await authClient.getSession();
                 console.log(sessionRes);
-                const sessionId = sessionRes.data?.user.id || null;
-                if (!sessionId) {
+                const userID = sessionRes.data?.user.id || null;
+                if (!userID) {
                     console.error("session id not found");
                     return;
                 }
                 setUserData((prev) => ({
                     ...prev,
-                    user: sessionId,
+                    user: userID,
                 }));
-                userDataRef.current.user = sessionId;
+                userDataRef.current.user = userID;
             } catch (error) {
                 console.error("Error fetching session:", error);
             }

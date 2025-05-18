@@ -3,10 +3,10 @@ import { useUserData } from "../hooks/useUserData";
 import { useWebRTC } from "../hooks/useWebRTC";
 import { VideoDisplay } from "./communication/VideoDisplay";
 import { Controls } from "./communication/Controls";
-import { SidePanel } from "./communication/SidePanel";
+import { ChatSection } from "./communication/Chat";
 
-export const Omegle = () => {
-    const { userData, userDataRef, setUserData } = useUserData();
+export const Communication = () => {
+    const { userDataRef, setUserData } = useUserData();
     const {
         videoStates,
         setVideoStates,
@@ -15,6 +15,7 @@ export const Omegle = () => {
         nextCall,
         localStream,
         remoteStream,
+        ws,
     } = useWebRTC(userDataRef);
 
     function dataOnChange(event: ChangeEvent<HTMLInputElement>) {
@@ -45,9 +46,9 @@ export const Omegle = () => {
     }, []);
 
     return (
-        <div className="h-screen flex">
+        <div className="h-screen flex p-10 bg-gradient-to-br from-purple-100 to-blue-100">
             {/* Video & Controls */}
-            <div className="flex flex-col m-8 w-2/3">
+            <div className="flex flex-col mx-8 w-2/3 ">
                 <VideoDisplay
                     localStreamRef={localStream}
                     remoteStreamRef={remoteStream}
@@ -60,7 +61,11 @@ export const Omegle = () => {
                 />
             </div>
 
-            <SidePanel userData={userData} onDataChange={dataOnChange} />
+            <ChatSection
+                userData={userDataRef.current}
+                onDataChange={dataOnChange}
+                ws={ws}
+            />
         </div>
     );
 };

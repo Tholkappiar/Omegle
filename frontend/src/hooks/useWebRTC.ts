@@ -20,7 +20,7 @@ export const useWebRTC = (userDataRef: React.RefObject<RequestData>) => {
     const endCall = () => {
         if (ws.current) {
             // Send leave message to server
-            const data = {
+            const data: RequestData = {
                 user: userDataRef.current.user,
                 partner: userDataRef.current.partner,
                 type: "leave",
@@ -68,7 +68,7 @@ export const useWebRTC = (userDataRef: React.RefObject<RequestData>) => {
         endCall();
         if (ws.current) {
             // Send next message to server
-            const data = {
+            const data: RequestData = {
                 user: userDataRef.current.user,
                 type: "next",
             };
@@ -87,7 +87,7 @@ export const useWebRTC = (userDataRef: React.RefObject<RequestData>) => {
 
         pc.onicecandidate = (event) => {
             if (event.candidate) {
-                const data = {
+                const data: RequestData = {
                     user: userDataRef.current.user,
                     partner: userDataRef.current.partner,
                     type: "candidate",
