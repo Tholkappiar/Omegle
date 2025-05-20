@@ -12,4 +12,7 @@ export const auth = betterAuth({
     emailAndPassword: { enabled: true },
     trustedOrigins: [CONFIG.FRONTEND_URL],
     plugins: [openAPI()],
+    session: {
+        expiresIn: 30, // 30 sec for test
+    },
 });

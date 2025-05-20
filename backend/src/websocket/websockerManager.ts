@@ -14,8 +14,6 @@ export class WebSocketManager {
     private mediaStates: Map<string, { microphone: boolean; video: boolean }> =
         new Map();
 
-    private constructor() {}
-
     public initialize(server: HttpServer): void {
         if (this.wss) {
             return;
@@ -71,13 +69,11 @@ export class WebSocketManager {
             case "offer":
             case "answer":
             case "candidate":
+            case "chat":
                 this.relayMessage(message);
                 break;
             case "next":
                 this.handleNext(message.user);
-                break;
-            case "media-state-change":
-                this.handleMediaStateChange(message);
                 break;
             case "leave":
                 this.handleLeave(message.user);
@@ -96,25 +92,6 @@ export class WebSocketManager {
 
         // Pair the user with someone available
         this.pairUser(userId);
-    }
-
-    private handleMediaStateChange(message: WebSocketMessage): void {
-        const { user, partner, mediaState } = message;
-
-        // Update stored media state
-        if (user && mediaState) {
-            const currentState = this.mediaStates.get(user) || {
-                microphone: true,
-                video: true,
-            };
-            this.mediaStates.set(user, {
-                ...currentState,
-                ...mediaState,
-            });
-        }
-
-        // Relay the media state change to partner
-        this.relayMessage(message);
     }
 
     private handleLeave(userId: string): void {
@@ -143,7 +120,12 @@ export class WebSocketManager {
 
     private relayMessage(message: WebSocketMessage): void {
         const targetClient = message.partner;
-        if (targetClient && this.users.has(targetClient)) {
+        if (!targetClient) {
+            console.error("no target client specified");
+            return;
+        }
+        const correct_pair = this.pairings.get(message.user) === targetClient;
+        if (correct_pair && this.users.has(targetClient)) {
             this.users.get(targetClient)?.send(JSON.stringify(message));
         }
     }
