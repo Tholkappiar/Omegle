@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import type { RequestData } from "../components/communication/types";
-import { authClient } from "../../lib/auth-client";
+import { useAuth } from "../context/AuthContext";
 
 export const useUserData = () => {
     const [userData, setUserData] = useState<RequestData>({
@@ -17,19 +17,13 @@ export const useUserData = () => {
         candidate: null,
     });
 
-    const updatePartner = (partner: string) => {
-        setUserData((prev) => ({
-            ...prev,
-            partner: partner,
-        }));
-    };
+    const { userSession } = useAuth();
+    console.log(userSession);
 
     useEffect(() => {
         const fetchSession = async () => {
             try {
-                const sessionRes = await authClient.getSession();
-                console.log(sessionRes);
-                const userID = sessionRes.data?.user.id || null;
+                const userID = userSession?.user.id || null;
                 if (!userID) {
                     console.error("session id not found");
                     return;
@@ -51,6 +45,6 @@ export const useUserData = () => {
         userData,
         setUserData,
         userDataRef,
-        updatePartner,
+        userSession,
     };
 };

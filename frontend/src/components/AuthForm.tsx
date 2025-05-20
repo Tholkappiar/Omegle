@@ -2,6 +2,8 @@ import type React from "react";
 import { useState, type ChangeEvent } from "react";
 import { authClient } from "../../lib/auth-client";
 import type { userAuthRequest } from "./communication/types";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const AuthForm: React.FC = () => {
     const [mode, setMode] = useState<"login" | "signup">("login");
@@ -12,21 +14,48 @@ const AuthForm: React.FC = () => {
         password: "",
     });
 
+    const navigate = useNavigate();
+    const { setUserSession } = useAuth();
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
         try {
             const { email, password } = authReq;
+            let response;
             if (mode === "login") {
-                await authClient.signIn.email({ email, password });
+                response = await authClient.signIn.email({
+                    email,
+                    password,
+                });
+                if (!response.error) {
+                    const session = await authClient.getSession();
+                    console.log(
+                        "getting session value from server - in auth context "
+                    );
+
+                    setUserSession(session.data);
+                    navigate("/omegle");
+                    return;
+                }
             } else {
                 const { email, password, name } = authReq;
                 if (!name) {
                     console.error("name not provided");
                     return;
                 }
-                await authClient.signUp.email({ email, password, name });
+                response = await authClient.signUp.email({
+                    email,
+                    password,
+                    name,
+                });
+                if (!response.error) {
+                    const session = await authClient.getSession();
+                    setUserSession(session.data);
+                    navigate("/omegle");
+                    return;
+                }
             }
         } catch (error) {
             console.error("Authentication error:", error);
@@ -44,7 +73,7 @@ const AuthForm: React.FC = () => {
     }
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-100 to-blue-100 p-4">
+        <div className="flex items-center justify-center flex-1 bg-gradient-to-br from-purple-100 to-blue-100 p-4">
             <div className="relative w-full max-w-md p-8 bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] overflow-hidden">
                 {/* Decorative bubbles */}
                 <div className="absolute -top-20 -left-20 w-40 h-40 rounded-full bg-pink-100 opacity-70"></div>
@@ -52,8 +81,8 @@ const AuthForm: React.FC = () => {
                 <div className="absolute top-10 right-10 w-16 h-16 rounded-full bg-yellow-100 opacity-50"></div>
 
                 <div className="relative z-10">
-                    <h2 className="text-3xl font-bold text-center bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent mb-8">
-                        {mode === "login" ? "Welcome Back!" : "Join Us Today!"}
+                    <h2 className="text-3xl font-DynaPuff text-center bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent mb-8">
+                        bubbly
                     </h2>
 
                     {/* Mode toggle */}
@@ -202,7 +231,12 @@ const AuthForm: React.FC = () => {
 
                     {mode === "login" && (
                         <p className="mt-4 text-center text-sm text-gray-500">
-                            <button className="text-purple-500 hover:text-purple-700 transition-colors">
+                            <button
+                                onClick={() =>
+                                    console.log("Forgot password clicked")
+                                }
+                                className="text-purple-500 hover:text-purple-700 transition-colors"
+                            >
                                 Forgot password?
                             </button>
                         </p>

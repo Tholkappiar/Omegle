@@ -102,7 +102,7 @@ export const ChatSection = ({ userData, ws }: SidePanelProps) => {
             <div ref={chatContainerRef} className="flex-1 p-4 overflow-y-auto">
                 {!userData.partner ? (
                     <div className="flex items-center justify-center h-full text-gray-500">
-                        Waiting for connection...
+                        Waiting for connection ...
                     </div>
                 ) : messages.length === 0 ? (
                     <div className="flex items-center justify-center h-full text-gray-500">

@@ -46,7 +46,7 @@ export const Communication = () => {
     }, []);
 
     return (
-        <div className="h-screen flex p-10 bg-gradient-to-br from-purple-100 to-blue-100">
+        <div className="flex-1 flex p-10 bg-gradient-to-br from-purple-100 to-blue-100">
             {/* Video & Controls */}
             <div className="flex flex-col mx-8 w-2/3 ">
                 <VideoDisplay

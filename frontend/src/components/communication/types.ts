@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 export type RequestType =
     | "offer"
     | "answer"
@@ -26,3 +28,33 @@ export type userAuthRequest = {
     email: string;
     password: string;
 };
+
+export interface childrenProp {
+    children: ReactNode;
+}
+
+interface session {
+    id: string;
+    createdAt: Date;
+    updatedAt: Date;
+    userId: string;
+    expiresAt: Date;
+    token: string;
+    ipAddress?: string | null | undefined;
+    userAgent?: string | null | undefined;
+}
+
+interface user {
+    id: string;
+    name: string;
+    email: string;
+    emailVerified: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+    image?: string | null | undefined;
+}
+
+export interface UserSession {
+    user: user;
+    session?: session;
+}
