@@ -4,6 +4,7 @@ import { Communication } from "./components/Communication";
 import Layout from "./components/Layout";
 import AuthProvider from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import EmailVerification from "./components/VerifyUser";
 
 function App() {
     return (
@@ -18,6 +19,10 @@ function App() {
                                 element={<Communication />}
                             ></Route>
                         </Route>
+                        <Route
+                            path="/verify-email"
+                            element={<EmailVerification />}
+                        ></Route>
                     </Route>
                 </Routes>
             </AuthProvider>

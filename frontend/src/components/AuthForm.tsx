@@ -4,6 +4,7 @@ import { authClient } from "../../lib/auth-client";
 import type { userAuthRequest } from "./communication/types";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { showToast } from "./utils";
 
 const AuthForm: React.FC = () => {
     const [mode, setMode] = useState<"login" | "signup">("login");
@@ -39,6 +40,7 @@ const AuthForm: React.FC = () => {
                     navigate("/omegle");
                     return;
                 }
+                if (response.error.message) showToast(response?.error.message);
             } else {
                 const { email, password, name } = authReq;
                 if (!name) {
@@ -56,6 +58,7 @@ const AuthForm: React.FC = () => {
                     navigate("/omegle");
                     return;
                 }
+                if (response.error.message) showToast(response?.error.message);
             }
         } catch (error) {
             console.error("Authentication error:", error);

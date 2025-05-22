@@ -5,6 +5,7 @@ import type {
 } from "../components/communication/types";
 import { authClient } from "../../lib/auth-client";
 import { useNavigate } from "react-router-dom";
+import { showToast } from "../components/utils";
 
 type AuthContextType = {
     userSession: UserSession | null;
@@ -56,6 +57,7 @@ export const AuthProvider = ({ children }: childrenProp) => {
 
             const timeout = setTimeout(() => {
                 console.log("Session expired. Auto-logout triggered.");
+                showToast("Session Expired, Please Login again !");
                 setUserSession(null);
                 navigate("/");
             }, delay);
