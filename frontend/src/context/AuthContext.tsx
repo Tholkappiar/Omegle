@@ -1,4 +1,11 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+    createContext,
+    useContext,
+    useEffect,
+    useState,
+    useCallback,
+    useRef,
+} from "react";
 import type {
     childrenProp,
     UserSession,
@@ -9,14 +16,16 @@ import { showToast } from "../components/utils";
 
 type AuthContextType = {
     userSession: UserSession | null;
-    setUserSession: React.Dispatch<React.SetStateAction<UserSession | null>>;
     sessionLoading: boolean;
+    setUserSession: React.Dispatch<React.SetStateAction<UserSession | null>>;
+    refetchSession: () => Promise<void>;
 };
 
 const authContext = createContext<AuthContextType>({
     userSession: null,
     setUserSession: () => {},
     sessionLoading: false,
+    refetchSession: async () => {},
 });
 
 export const AuthProvider = ({ children }: childrenProp) => {
@@ -24,36 +33,64 @@ export const AuthProvider = ({ children }: childrenProp) => {
     const [sessionLoading, setSessionLoading] = useState(true);
     const { useSession } = authClient;
     const navigate = useNavigate();
-    const { data, isPending, error } = useSession();
-    console.log("getting session value from server - in auth context ");
+    const { data, isPending, error, refetch } = useSession();
+    const hasInitialized = useRef(false);
+
+    console.log("outside use effect in auth context");
+
+    const refetchSession = useCallback(async () => {
+        try {
+            setSessionLoading(true);
+            refetch();
+        } catch (err) {
+            console.error("Error refetching session:", err);
+            setUserSession(null);
+            showToast("Failed to refresh session");
+        } finally {
+            setSessionLoading(false);
+        }
+    }, [refetch]);
+
     useEffect(() => {
+        // Prevent multiple initializations
+        if (hasInitialized.current && !isPending && !error && !data?.session) {
+            console.log("Skipping re-initialization - already checked session");
+            return;
+        }
+
         setSessionLoading(isPending);
 
-        if (isPending) return;
+        if (isPending) {
+            console.log("is this the solution , so is this the problem ? ");
+            return;
+        }
 
         if (error) {
             console.log("Error checking session:", error);
             setUserSession(null);
             setSessionLoading(false);
+            hasInitialized.current = true;
             return;
         }
 
+        console.log("above use effect in auth context");
         if (data?.session) {
+            console.log("inside session in use effect in auth context");
             const expiresAt = new Date(data.session.expiresAt).getTime();
             const currentTime = Date.now();
             const delay = expiresAt - currentTime;
 
             if (delay <= 0) {
-                // Session has already expired
                 console.log("Session expired. Clearing session...");
                 setUserSession(null);
                 setSessionLoading(false);
+                hasInitialized.current = true;
                 return;
             }
 
-            // Update session and schedule auto-logout
             setUserSession(data);
             setSessionLoading(false);
+            hasInitialized.current = true;
 
             const timeout = setTimeout(() => {
                 console.log("Session expired. Auto-logout triggered.");
@@ -62,21 +99,30 @@ export const AuthProvider = ({ children }: childrenProp) => {
                 navigate("/");
             }, delay);
 
-            // Cleanup on component unmount
             return () => clearTimeout(timeout);
         } else {
             setUserSession(null);
             setSessionLoading(false);
+            hasInitialized.current = true;
         }
-    }, [data, error, isPending, navigate, setUserSession]);
+    }, [data, error, isPending, navigate]);
 
-    if (sessionLoading) {
+    useEffect(() => {
+        console.log("data changed : ", data);
+    }, [data]);
+
+    if (sessionLoading && !hasInitialized.current) {
         return <div>Loading...</div>;
     }
 
     return (
         <authContext.Provider
-            value={{ userSession, setUserSession, sessionLoading }}
+            value={{
+                userSession,
+                sessionLoading,
+                setUserSession,
+                refetchSession,
+            }}
         >
             {children}
         </authContext.Provider>

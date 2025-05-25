@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
     useNavigate,
     useLocation,
     type NavigateFunction,
 } from "react-router-dom";
 import { authClient } from "../../lib/auth-client";
-import { useAuth } from "../context/AuthContext";
 import { showToast } from "./utils";
 import { Check, ClockAlert, LoaderCircle, ShieldX } from "lucide-react";
 
@@ -21,10 +20,19 @@ const EmailVerification: React.FC = () => {
     const [countdown, setCountdown] = useState<number>(5);
     const navigate = useNavigate();
     const location = useLocation();
-    const { setUserSession } = useAuth();
+    const hasVerified = useRef(false);
+    const [redirectHome, setRedirectHome] = useState<boolean>(false);
 
-    // Verify email on mount
+    console.log("outside use effect in verify user");
+
     useEffect(() => {
+        // Prevent duplicate verification attempts
+        if (hasVerified.current) {
+            console.log("Already verified, skipping...");
+            return;
+        }
+
+        console.log("above use effect in verify user");
         const verifyEmail = async () => {
             try {
                 const params = new URLSearchParams(location.search);
@@ -35,6 +43,9 @@ const EmailVerification: React.FC = () => {
                     return;
                 }
 
+                console.log("inside use effect in verify user");
+                hasVerified.current = true; // Mark as attempting verification
+
                 const response = await authClient.verifyEmail({
                     query: { token },
                 });
@@ -42,10 +53,6 @@ const EmailVerification: React.FC = () => {
                 console.log("Verification response:", response);
                 if (response.data?.status === true) {
                     setStatus("verified");
-                    const session = await authClient.getSession();
-                    if (session.data) {
-                        setUserSession(session.data);
-                    }
                 } else if (response.error) {
                     if (response.error.code === "INVALID_TOKEN") {
                         setStatus("invalid");
@@ -70,27 +77,31 @@ const EmailVerification: React.FC = () => {
         };
 
         verifyEmail();
-    }, [location.search, setUserSession]);
+    }, [location.search]); // Added proper dependency
 
-    // Handle countdown for verified status
     useEffect(() => {
         if (status !== "verified") return;
 
         const timer = setInterval(() => {
-            setCountdown((prev) => prev - 1);
+            setCountdown((prev) => {
+                if (prev <= 1) {
+                    clearInterval(timer);
+                    setRedirectHome(true);
+                    return 0;
+                }
+                return prev - 1;
+            });
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [status]);
+    }, [status, navigate]);
 
-    // Navigate when countdown reaches zero
     useEffect(() => {
-        if (status === "verified" && countdown <= 0) {
-            navigate("/");
+        if (redirectHome) {
+            navigate("/omegle");
         }
-    }, [status, countdown, navigate]);
+    }, [redirectHome]);
 
-    // Resend verification email
     const handleResendVerification = async () => {
         try {
             const params = new URLSearchParams(location.search);
@@ -99,7 +110,7 @@ const EmailVerification: React.FC = () => {
             setStatus("loading");
             if (!email) {
                 showToast("Invalid Email");
-                navigate("/");
+                navigate("/", { replace: true });
                 return;
             }
             const response = await authClient.sendVerificationEmail({
@@ -115,7 +126,7 @@ const EmailVerification: React.FC = () => {
                 );
             } else {
                 showToast("Verification email sent successfully!");
-                navigate("/");
+                navigate("/", { replace: true });
             }
         } catch (error) {
             console.error("Resend verification error:", error);
@@ -221,7 +232,6 @@ const EmailVerification: React.FC = () => {
     return (
         <div className="flex items-center justify-center flex-1 bg-gradient-to-br from-purple-100 to-blue-100 p-4 min-h-screen">
             <div className="relative w-full max-w-md p-8 bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] overflow-hidden">
-                {/* Decorative bubbles */}
                 <div className="absolute -top-20 -left-20 w-40 h-40 rounded-full bg-pink-100 opacity-70"></div>
                 <div className="absolute -bottom-20 -right-20 w-40 h-40 rounded-full bg-blue-100 opacity-70"></div>
                 <div className="absolute top-10 right-10 w-16 h-16 rounded-full bg-yellow-100 opacity-50"></div>
@@ -255,7 +265,7 @@ function ResendVerification(
                 Resend Verification
             </button>
             <button
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/", { replace: true })}
                 className="py-3 px-6 text-gray-600 font-medium bg-gray-100 rounded-xl hover:bg-gray-200 transition-all duration-300"
             >
                 Go to Homepage

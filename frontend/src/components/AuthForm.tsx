@@ -2,45 +2,40 @@ import type React from "react";
 import { useState, type ChangeEvent } from "react";
 import { authClient } from "../../lib/auth-client";
 import type { userAuthRequest } from "./communication/types";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
 import { showToast } from "./utils";
+import OTPInput from "./OtpInput";
 
 const AuthForm: React.FC = () => {
     const [mode, setMode] = useState<"login" | "signup">("login");
     const [isLoading, setIsLoading] = useState(false);
+    const [isOTPsection, SetIsOTPsection] = useState<boolean>(false);
     const [authReq, setAuthReq] = useState<userAuthRequest>({
         name: "",
         email: "",
         password: "",
     });
 
-    const navigate = useNavigate();
-    const { setUserSession } = useAuth();
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
         try {
-            const { email, password } = authReq;
+            const { email } = authReq;
             let response;
             if (mode === "login") {
-                response = await authClient.signIn.email({
+                response = await authClient.emailOtp.sendVerificationOtp({
                     email,
-                    password,
+                    type: "sign-in",
                 });
-                if (!response.error) {
-                    const session = await authClient.getSession();
-                    console.log(
-                        "getting session value from server - in auth context "
-                    );
-
-                    setUserSession(session.data);
-                    navigate("/omegle");
-                    return;
+                console.log(response);
+                if (response.data?.success) {
+                    if (!response.error) {
+                        SetIsOTPsection(true);
+                    }
                 }
-                if (response.error.message) showToast(response?.error.message);
+                if (response.error?.message) {
+                    showToast(response?.error.message);
+                }
             } else {
                 const { email, password, name } = authReq;
                 if (!name) {
@@ -53,9 +48,9 @@ const AuthForm: React.FC = () => {
                     name,
                 });
                 if (!response.error) {
-                    const session = await authClient.getSession();
-                    setUserSession(session.data);
-                    navigate("/omegle");
+                    showToast(
+                        "Verification Email sent, Please verify the Email"
+                    );
                     return;
                 }
                 if (response.error.message) showToast(response?.error.message);
@@ -75,7 +70,9 @@ const AuthForm: React.FC = () => {
         }));
     }
 
-    return (
+    return isOTPsection ? (
+        <OTPInput email={authReq.email} />
+    ) : (
         <div className="flex items-center justify-center flex-1 bg-gradient-to-br from-purple-100 to-blue-100 p-4">
             <div className="relative w-full max-w-md p-8 bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] overflow-hidden">
                 {/* Decorative bubbles */}
@@ -168,21 +165,21 @@ const AuthForm: React.FC = () => {
                                 Email Address
                             </label>
                         </div>
-
-                        <div className="relative group">
-                            <input
-                                type="password"
-                                id="password"
-                                name="password"
-                                placeholder=" "
-                                value={authReq.password}
-                                required
-                                onChange={onChange}
-                                className="w-full px-5 py-4 text-gray-700 bg-gray-50 rounded-2xl border-2 border-transparent outline-none transition-all duration-300 focus:border-purple-400 focus:bg-white peer"
-                            />
-                            <label
-                                htmlFor="password"
-                                className={`absolute left-5 top-4 text-gray-400 transition-all duration-300 transform
+                        {mode === "signup" && (
+                            <div className="relative group">
+                                <input
+                                    type="password"
+                                    id="password"
+                                    name="password"
+                                    placeholder=" "
+                                    value={authReq.password}
+                                    required
+                                    onChange={onChange}
+                                    className="w-full px-5 py-4 text-gray-700 bg-gray-50 rounded-2xl border-2 border-transparent outline-none transition-all duration-300 focus:border-purple-400 focus:bg-white peer"
+                                />
+                                <label
+                                    htmlFor="password"
+                                    className={`absolute left-5 top-4 text-gray-400 transition-all duration-300 transform
             peer-focus:-translate-y-9 peer-focus:-translate-x-4 peer-focus:text-xs peer-focus:text-purple-500
             ${
                 authReq.password
@@ -190,11 +187,11 @@ const AuthForm: React.FC = () => {
                     : ""
             }
         `}
-                            >
-                                Password
-                            </label>
-                        </div>
-
+                                >
+                                    Password
+                                </label>
+                            </div>
+                        )}
                         <button
                             type="submit"
                             disabled={isLoading}
@@ -231,19 +228,6 @@ const AuthForm: React.FC = () => {
                             )}
                         </button>
                     </form>
-
-                    {mode === "login" && (
-                        <p className="mt-4 text-center text-sm text-gray-500">
-                            <button
-                                onClick={() =>
-                                    console.log("Forgot password clicked")
-                                }
-                                className="text-purple-500 hover:text-purple-700 transition-colors"
-                            >
-                                Forgot password?
-                            </button>
-                        </p>
-                    )}
 
                     <div className="mt-8 text-center">
                         <div className="inline-flex items-center justify-center w-full">
