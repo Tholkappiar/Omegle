@@ -57,8 +57,6 @@ export const ChatSection = ({ userData, ws }: SidePanelProps) => {
     }, [ws, userData.partner]);
 
     const handleSendMessage = () => {
-        console.log(userData.partner);
-        console.log(ws?.current);
         if (newMessage.trim() === "" || !userData.partner || !ws?.current)
             return;
 

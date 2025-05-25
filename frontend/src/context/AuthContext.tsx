@@ -36,8 +36,6 @@ export const AuthProvider = ({ children }: childrenProp) => {
     const { data, isPending, error, refetch } = useSession();
     const hasInitialized = useRef(false);
 
-    console.log("outside use effect in auth context");
-
     const refetchSession = useCallback(async () => {
         try {
             setSessionLoading(true);
@@ -61,21 +59,17 @@ export const AuthProvider = ({ children }: childrenProp) => {
         setSessionLoading(isPending);
 
         if (isPending) {
-            console.log("is this the solution , so is this the problem ? ");
             return;
         }
 
         if (error) {
-            console.log("Error checking session:", error);
             setUserSession(null);
             setSessionLoading(false);
             hasInitialized.current = true;
             return;
         }
 
-        console.log("above use effect in auth context");
         if (data?.session) {
-            console.log("inside session in use effect in auth context");
             const expiresAt = new Date(data.session.expiresAt).getTime();
             const currentTime = Date.now();
             const delay = expiresAt - currentTime;
@@ -106,10 +100,6 @@ export const AuthProvider = ({ children }: childrenProp) => {
             hasInitialized.current = true;
         }
     }, [data, error, isPending, navigate]);
-
-    useEffect(() => {
-        console.log("data changed : ", data);
-    }, [data]);
 
     if (sessionLoading && !hasInitialized.current) {
         return <div>Loading...</div>;

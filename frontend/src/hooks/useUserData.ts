@@ -18,7 +18,6 @@ export const useUserData = () => {
     });
 
     const { userSession } = useAuth();
-    console.log(userSession);
 
     useEffect(() => {
         const fetchSession = async () => {
