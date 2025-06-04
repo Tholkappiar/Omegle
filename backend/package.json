@@ -7,7 +7,7 @@
     "types": "dist/index",
     "scripts": {
         "dev": "yarn nodemon ./src/index.ts",
-        "build": "yarn && tsc",
+        "build": "yarn install && tsc",
         "start": "node ./dist/index.js"
     },
     "dependencies": {
