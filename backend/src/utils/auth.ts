@@ -12,7 +12,7 @@ export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),
-    appName: "omegle-mny-app",
+    appName: CONFIG.APP_NAME,
     trustedOrigins: [CONFIG.FRONTEND_URL],
     plugins: [
         openAPI(),
@@ -20,7 +20,7 @@ export const auth = betterAuth({
             async sendVerificationOTP({ email, otp, type }) {
                 try {
                     await transporter.sendMail({
-                        from: '"Omegle MNY App" <trickytom097@gmail.com>',
+                        from: `"${CONFIG.APP_NAME}" <${CONFIG.SMTP_EMAIL}>`,
                         to: email,
                         subject: "Your Verification OTP",
                         html: otpEmailTemplate(otp),
@@ -30,6 +30,7 @@ export const auth = betterAuth({
                     console.error("Error sending OTP email:", error);
                     throw new Error("Failed to send OTP email");
                 }
+                console.log(otp);
             },
             expiresIn: 60,
         }),
@@ -47,7 +48,7 @@ export const auth = betterAuth({
                 const URL = `${CONFIG.FRONTEND_URL}/verify-email?token=${token}&email=${user.email}`;
                 console.log(URL);
                 await transporter.sendMail({
-                    from: '"Omegle MNY App" <trickytom097@gmail.com>',
+                    from: `"${CONFIG.APP_NAME}" <${CONFIG.SMTP_EMAIL}>`,
                     to: user.email,
                     subject: "Verify Your Email Address",
                     html: verificationEmailTemplate(URL),
