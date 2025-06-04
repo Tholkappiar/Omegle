@@ -27,7 +27,6 @@ const AuthForm: React.FC = () => {
                     email,
                     type: "sign-in",
                 });
-                console.log(response);
                 if (response.data?.success) {
                     if (!response.error) {
                         SetIsOTPsection(true);

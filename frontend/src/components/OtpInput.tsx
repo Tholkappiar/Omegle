@@ -10,7 +10,7 @@ interface OTPInputProps {
 
 const OTPInput: React.FC<OTPInputProps> = ({ email }) => {
     const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
-    const [timer, setTimer] = useState<number>(5);
+    const [timer, setTimer] = useState<number>(60);
     const [canResend, setCanResend] = useState<boolean>(false);
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
     const navigate = useNavigate();
@@ -73,7 +73,7 @@ const OTPInput: React.FC<OTPInputProps> = ({ email }) => {
                 showToast("Invalid OTP, Please enter the correct one.");
                 return;
             }
-
+            await authClient.revokeOtherSessions();
             refetchSession();
             showToast("OTP Verified Successfully!");
             navigate("/omegle");

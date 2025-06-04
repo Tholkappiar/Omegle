@@ -23,8 +23,6 @@ const EmailVerification: React.FC = () => {
     const hasVerified = useRef(false);
     const [redirectHome, setRedirectHome] = useState<boolean>(false);
 
-    console.log("outside use effect in verify user");
-
     useEffect(() => {
         // Prevent duplicate verification attempts
         if (hasVerified.current) {
@@ -32,7 +30,6 @@ const EmailVerification: React.FC = () => {
             return;
         }
 
-        console.log("above use effect in verify user");
         const verifyEmail = async () => {
             try {
                 const params = new URLSearchParams(location.search);
@@ -43,14 +40,12 @@ const EmailVerification: React.FC = () => {
                     return;
                 }
 
-                console.log("inside use effect in verify user");
                 hasVerified.current = true; // Mark as attempting verification
 
                 const response = await authClient.verifyEmail({
                     query: { token },
                 });
 
-                console.log("Verification response:", response);
                 if (response.data?.status === true) {
                     setStatus("verified");
                 } else if (response.error) {
