@@ -3,8 +3,6 @@
     "version": "1.0.0",
     "author": "tholkappiar",
     "license": "MIT",
-    "main": "dist/index",
-    "types": "dist/index",
     "scripts": {
         "dev": "yarn nodemon ./src/index.ts",
         "build": "yarn install && tsc",
